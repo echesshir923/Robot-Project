@@ -14,7 +14,7 @@ int main()
     // Declare variables
     //float sensorVal, degree;
     
-    bool run = false, partonedone=false, partonenotdone=true; 
+    bool run = false, partonedone=false, finish=false; 
 
 
     // Declare input pins
@@ -24,10 +24,6 @@ int main()
     DigitalInputPin leftb(FEHIO::P0_2);
     DigitalInputPin rightb(FEHIO::P3_7);
 
-    bool leftfor = leftf.Value();
-    bool rightfor = rightf.Value();
-    bool leftback = leftb.Value();
-    bool rightback = rightb.Value();
     int a;
  
 
@@ -36,42 +32,42 @@ int main()
     while (true){
 
         if (LCD.Touch(&a,&a)){
-            //run = true;
+            run = true;
             drive_motorleft.SetPercent(25);
             drive_motorright.SetPercent(25);
             LCD.Write("hey");
         }
-        LCD.Write("please");
-        if(!leftfor){
-            LCD.Write("left");
-            drive_motorleft.Stop();
-            drive_motorright.Stop();
-            Sleep(3000);
-        }
         while (run){
-            if (!leftfor && !rightfor && partonenotdone){
+            if (!leftf.Value() && !rightf.Value() && !partonedone){
                 drive_motorleft.Stop();
                 drive_motorright.Stop();
-                Sleep(3000);
+                Sleep(1000);
                 drive_motorright.SetPercent(-25);
             }
-            if (!leftback  && !rightback && partonenotdone){
+            if (!leftb.Value()  && !rightb.Value() && !partonedone){
                 drive_motorright.Stop();
+                Sleep(1000);
                 drive_motorleft.SetPercent(25);
                 drive_motorright.SetPercent(25);
                 partonedone=true;
-                partonenotdone = false;
             }
-            if(leftback == 0 && rightback == 0 && partonedone){
+            if(!leftf.Value() && !rightf.Value() && partonedone){
                 drive_motorleft.Stop();
                 drive_motorright.Stop();
+                Sleep(1000);
                 drive_motorleft.SetPercent(-25);
             }
-            if(leftback == 0 && rightback == 0 && partonedone){
+            if(!leftb.Value() && !rightb.Value() && partonedone){
                 drive_motorleft.Stop();
+                Sleep(1000);
                 drive_motorleft.SetPercent(25);
                 drive_motorright.SetPercent(25);
-                run = false;
+                finish=true;
+            }
+            if(!leftf.Value() && !rightf.Value() && finish){
+                drive_motorleft.Stop();
+                drive_motorright.Stop();
+                run=false;
             }
         }
 
@@ -105,5 +101,3 @@ int main()
     // }
 
 }
-
-
