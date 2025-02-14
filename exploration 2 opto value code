@@ -3,9 +3,9 @@
 #include <FEHSD.h>
 
 // Declarations for analog optosensors
-AnalogInputPin right_opto(FEHIO::P1_0);
+AnalogInputPin left_opto(FEHIO::P1_0);
 AnalogInputPin middle_opto(FEHIO::P1_1);
-AnalogInputPin left_opto(FEHIO::P1_2);
+AnalogInputPin right_opto(FEHIO::P1_2);
 
 int main(void)
 {
