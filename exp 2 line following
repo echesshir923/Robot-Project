@@ -1,0 +1,66 @@
+#include <FEHIO.h>
+#include <FEHLCD.h>
+#include <FEHUtility.h>
+#include <FEHSD.h>
+#include <FEHMotor.h>
+
+enum LineStates
+{
+    LEFT,
+    MIDDLE,
+    RIGHT
+};
+
+// Set up motors
+FEHMotor motorleft(FEHMotor::Motor1,9.0);
+FEHMotor motorright(FEHMotor::Motor0,9.0);
+
+// Set up optosensors
+AnalogInputPin left_opto(FEHIO::P1_0);
+AnalogInputPin middle_opto(FEHIO::P1_1);
+AnalogInputPin right_opto(FEHIO::P1_2);
+
+int main()
+{
+    int state = MIDDLE;
+    while(true)
+    {
+        switch(state)
+        {
+            case MIDDLE:
+                motorleft.SetPercent(-25);
+                motorright.SetPercent(25);
+
+                if(right_opto.Value() > 2.0)
+                {
+                    state = RIGHT;
+                }
+                if(left_opto.Value() > 2.2)
+                {
+                    state = LEFT;
+                }
+                break;
+            case LEFT:
+                motorleft.SetPercent(-10);
+                motorright.SetPercent(25);
+
+                if(left_opto.Value() < 2.2)
+                {
+                    state = MIDDLE;
+                }
+                break;
+            case RIGHT:
+                motorleft.SetPercent(-25);
+                motorright.SetPercent(10);
+
+                if(right_opto.Value() < 2.0)
+                {
+                    state = MIDDLE;
+                }
+                break;
+            default:
+                LCD.WriteLine("brb crying");
+        }
+        Sleep(50);
+    }
+}
