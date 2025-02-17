@@ -28,14 +28,14 @@ int main()
         switch(state)
         {
             case MIDDLE:
-                motorleft.SetPercent(-25);
+                motorleft.SetPercent(-25); // This is negative because crayola bots suck
                 motorright.SetPercent(25);
 
-                if(right_opto.Value() > 2.0)
+                if(right_opto.Value() > 2.4) // These values have to be changed for each robot
                 {
                     state = RIGHT;
                 }
-                if(left_opto.Value() > 2.2)
+                if(left_opto.Value() > 2.4)
                 {
                     state = LEFT;
                 }
@@ -44,7 +44,7 @@ int main()
                 motorleft.SetPercent(-10);
                 motorright.SetPercent(25);
 
-                if(left_opto.Value() < 2.2)
+                if(left_opto.Value() < 2.4)
                 {
                     state = MIDDLE;
                 }
@@ -53,7 +53,7 @@ int main()
                 motorleft.SetPercent(-25);
                 motorright.SetPercent(10);
 
-                if(right_opto.Value() < 2.0)
+                if(right_opto.Value() < 2.4)
                 {
                     state = MIDDLE;
                 }
