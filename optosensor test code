@@ -1,1 +1,34 @@
 // Use this one jacob and sneha
+#include <FEHLCD.h>
+#include <FEHIO.h>
+#include <FEHUtility.h>
+#include <FEHMotor.h>
+#include <FEHRCS.h>
+
+
+//Declarations for encoder
+AnalogInputPin middle_opto(FEHIO::P1_0);
+
+
+int main(void)
+{
+    int a;
+
+    // Touch to start
+    LCD.Clear();
+    LCD.WriteLine("Touch to start");
+    while(!LCD.Touch(&a, &a));
+    while(LCD.Touch(&a, &a));
+    LCD.Clear();
+    LCD.WriteLine("Starting now");
+    Sleep(1000);
+
+
+    while(true)
+    {
+        LCD.WriteLine(middle_opto.Value());
+        Sleep(1000);
+    }
+
+    return 0;
+}
