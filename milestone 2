@@ -202,6 +202,13 @@ int main(void)
         if(left_opto.Value()==0 && middle_opto.Value()==0 && right_opto.Value()==0){break;}
     }
 
+    // Drive forward until over top of light hole
+    while(middle_opto.Value() == 0) // REVISE WITH VALUES
+    {
+        left_motor.SetPercent(10);
+        right_motor.SetPercent(-10);
+    }
+
     
     Sleep(2.0); //Wait for counts to stabilize
     //Print out data
