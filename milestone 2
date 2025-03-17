@@ -91,7 +91,7 @@ void move_forward(int percent, double distance) //using encoders
     left_encoder.ResetCounts();
 
     //Set both motors to desired percent
-    right_motor.SetPercent(-percent);
+    right_motor.SetPercent(-percent-2);
     left_motor.SetPercent(percent);
     
     //While the average of the left and right encoder is less than counts,
@@ -130,13 +130,57 @@ void move_backward(int percent, double distance) //using encoders
     
 }
 
+void follow_line()
+{
+
+    int state = MIDDLE;
+    switch(state)
+        {
+            case MIDDLE:
+                left_motor.SetPercent(25); 
+                right_motor.SetPercent(-27);
+
+                if(right_opto.Value() > 2.4) // These values have to be changed for each robot
+                {
+                    state = RIGHT;
+                }
+                if(left_opto.Value() > 2.4)
+                {
+                    state = LEFT;
+                }
+                break;
+            case LEFT:
+                left_motor.SetPercent(10);
+                right_motor.SetPercent(-25);
+
+                if(left_opto.Value() < 2.4)
+                {
+                    state = MIDDLE;
+                }
+                break;
+            case RIGHT:
+                left_motor.SetPercent(25);
+                right_motor.SetPercent(-10);
+
+                if(right_opto.Value() < 2.4)
+                {
+                    state = MIDDLE;
+                }
+                break;
+            default:
+                LCD.WriteLine("brb crying");
+        }
+        Sleep(50);
+}
+
+
 int main(void)
 {
     int a, motor_percent=25, state;
 
     // RCS.InitializeTouchMenu("0910B2EGL");
     // Wait for light to start
-    while(middle_opto.Value() > 2.8); // REVISE WITH VALUES
+    while(left_opto.Value() > 2.6); // REVISE WITH VALUES
     LCD.WriteLine("Starting now");
     Sleep(500);
 
@@ -168,35 +212,40 @@ int main(void)
     LCD.WriteLine(right_encoder.Counts());
 
     // Drive forward a little
-    move_forward(motor_percent, 8);
+    move_forward(motor_percent, 11);
     Sleep(500);
 
     // Turn more
-    turn_left(motor_percent, 37);
+    turn_left(motor_percent, 27);
     Sleep(500);
 
     // Drive up ramp
-    move_forward(30, 30);
+    move_forward(30, 27);
     Sleep(500);
 
     LCD.WriteLine(left_encoder.Counts());
     LCD.WriteLine(right_encoder.Counts());
 
     // Turn towards light
-    turn_left(motor_percent-10,95);
+    turn_left(motor_percent-10,86);
     Sleep(500);
 
+    move_forward(motor_percent,5);
+    Sleep(50);
+
+
     // Drive forward until over top of light hole
-    while(middle_opto.Value() >2.8) // REVISE WITH VALUES (sensor not on line or light hole)
+    while(left_opto.Value() > 2.6 && right_opto.Value() > 2.6) // REVISE WITH VALUES (sensor not on line or light hole)
     {
-        left_motor.SetPercent(15);
-        right_motor.SetPercent(-17);
+        follow_line();
+        //left_motor.SetPercent(15);
+        //right_motor.SetPercent(-16);
     }
     left_motor.Stop();
     right_motor.Stop();
     Sleep(500);
     // Wait for light color
-    if(middle_opto.Value()<2.35) // REVISE WITH VALUES (blue light)
+    if(left_opto.Value()<1.5) // REVISE WITH VALUES (blue light)
     {
         LCD.WriteLine("light color: blue");
         move_forward(motor_percent,7);
@@ -205,7 +254,7 @@ int main(void)
         Sleep(500);
         turn_left(10,15);
     }
-    else if(middle_opto.Value()>2.35) // REVISE WITH VALUES (red light)
+    else if(left_opto.Value()>1.5) // REVISE WITH VALUES (red light)
     {
         LCD.WriteLine("light color: red");
         move_forward(motor_percent,7);
