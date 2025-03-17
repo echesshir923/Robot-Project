@@ -7,7 +7,9 @@
 
 
 //Declarations for encoder
-AnalogInputPin middle_opto(FEHIO::P1_0);
+AnalogInputPin left_opto(FEHIO::P1_0);
+AnalogInputPin middle_opto(FEHIO::P1_2);
+AnalogInputPin right_opto(FEHIO::P1_4);
 
 
 int main(void)
@@ -26,7 +28,10 @@ int main(void)
 
     while(true)
     {
+        LCD.WriteLine(left_opto.Value());
         LCD.WriteLine(middle_opto.Value());
+        LCD.WriteLine(right_opto.Value());
+        LCD.WriteLine("\n");
         Sleep(1000);
     }
 
