@@ -156,6 +156,32 @@ void move_backward_ramp(int percent, double distance) //using encoders
     left_motor.Stop();
     
 }
+void move_backward_right(int percent, double distance) //using encoders
+{
+    float radius=1.5;
+    int counts;
+
+    //Determine counts from distance
+    counts = distance*VEX_COUNTS/2/PI/radius;
+
+    //Reset encoder counts
+    right_encoder.ResetCounts();
+    left_encoder.ResetCounts();
+
+    //Set both motors to desired percent
+    right_motor.SetPercent(percent+15);
+    left_motor.SetPercent(-percent);
+    
+    //While the average of the left and right encoder is less than counts,
+    //keep running motors
+    while((left_encoder.Counts() + right_encoder.Counts()) / 2 < counts);
+    LCD.Write("it should be stoping now\n");
+
+    //Turn off motors
+    right_motor.Stop();
+    left_motor.Stop();
+    
+}
 
 void follow_line()
 {
@@ -207,35 +233,46 @@ int main(void)
 
     // RCS.InitializeTouchMenu("0910B2EGL");
     // Wait for light to start
-    while(cds.Value() < .5); // REVISE WITH VALUES
+    LCD.WriteLine(cds.Value());
+    while(cds.Value() > 2.8); // REVISE WITH VALUES
+    LCD.WriteLine(cds.Value());
     LCD.WriteLine("Starting now");
     Sleep(500);
 
+    move_backward_ramp(motor_percent, 12);
+    turn_right(motor_percent,45);
+    move_backward_ramp(motor_percent, 10.25);
+    turn_right(motor_percent,90);
+    move_backward_right(motor_percent+15, 8);
+
+
+
+
     // while(!LCD.Touch(&a,&a));
     // while(LCD.Touch(&a,&a));
-    // LCD.Clear();
-
-    turn_right(motor_percent,65);
-    Sleep(500);
-    move_backward_ramp(motor_percent, 10);
-    Sleep(500);
-    turn_left(motor_percent,18);
-    Sleep(500);
-    move_backward_ramp(motor_percent,22.75);
-    Sleep(500);
-    turn_left(motor_percent,90);
-    Sleep(500);
-    move_backward(motor_percent+12,21);
-    Sleep(500);
-    turn_left(motor_percent,15);
-    move_forward(15,2);
-    turn_right(15,15);
-    move_backward(15,2.5);
-    turn_right(15,15);
-    move_forward(15,2);
-    turn_left(15,13);
-    Sleep(500);
-    move_forward(motor_percent,12);
+    /// LCD.Clear();
+    
+    // turn_right(motor_percent,65);
+    // Sleep(500);
+    // move_backward_ramp(motor_percent, 10);
+    // Sleep(500);
+    // turn_left(motor_percent,18);
+    // Sleep(500);
+    // move_backward_ramp(motor_percent,22.75);
+    // Sleep(500);
+    // turn_left(motor_percent,90);
+    // Sleep(500);
+    // move_backward(motor_percent+12,21);
+    // Sleep(500);
+    // turn_left(motor_percent,15);
+    // move_forward(15,2);
+    // turn_right(15,15);
+    // move_backward(15,2.5);
+    // turn_right(15,15);
+    // move_forward(15,2);
+    // turn_left(15,13);
+    // Sleep(500);
+    // move_forward(motor_percent,12);
 
 
     Sleep(2000); //Wait for counts to stabilize
