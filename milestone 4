@@ -1,0 +1,335 @@
+#include <FEHLCD.h>
+#include <FEHIO.h>
+#include <FEHUtility.h>
+#include <FEHMotor.h>
+#include <math.h>
+#include <FEHRCS.h>
+
+//Declarations for encoders & motors
+DigitalEncoder left_encoder(FEHIO::P2_0);
+DigitalEncoder right_encoder(FEHIO::P2_3);
+DigitalEncoder arm_encoder(FEHIO::P2_4);
+FEHMotor left_motor(FEHMotor::Motor0,9.0);
+FEHMotor right_motor(FEHMotor::Motor1,9.0); // RIGHT MOTOR IS BACKWARDS
+FEHMotor arm_motor(FEHMotor::Motor2,9.0);
+AnalogInputPin left_opto(FEHIO::P1_0);
+AnalogInputPin middle_opto(FEHIO::P1_2);
+AnalogInputPin right_opto(FEHIO::P1_4);
+AnalogInputPin cds(FEHIO::P0_1);
+
+//Constants
+#define PI 3.14159265359
+#define VEX_COUNTS 180
+#define RADIUS 4
+
+enum LineStates
+{
+    LEFT,
+    MIDDLE,
+    RIGHT
+};
+
+
+void turn_right(int percent, int degrees) //using encoders
+{
+    double distance, radius=1.5;
+    int counts;
+
+    //Calculate arc distance
+    distance = (RADIUS*PI*degrees)/180;
+    // Calculate counts
+    counts = distance*VEX_COUNTS/2/PI/radius;
+
+    //Reset encoder counts
+    right_encoder.ResetCounts();
+    left_encoder.ResetCounts();
+    //Set both motors to desired percent
+    right_motor.SetPercent(percent);
+    left_motor.SetPercent(percent);
+
+    //While the average of the left and right encoder is less than counts,
+    //keep running motors
+    while((left_encoder.Counts() + right_encoder.Counts()) / 2 < counts);
+
+    //Turn off motors
+    right_motor.Stop();
+    left_motor.Stop();
+}
+void turn_left(int percent, int degrees) //using encoders
+{
+    double distance, radius=1.5;
+    int counts;
+
+    //Calculate arc distance
+    distance = (RADIUS*PI*degrees)/180;
+    // Calculate counts
+    counts = distance*VEX_COUNTS/2/PI/radius;
+    
+    //Reset encoder counts
+    right_encoder.ResetCounts();
+    left_encoder.ResetCounts();
+    //Set both motors to desired percent
+    //hint: set right motor backwards, left motor forwards
+    right_motor.SetPercent(-percent);
+    left_motor.SetPercent(-percent);
+
+    //While the average of the left and right encoder is less than counts,
+    //keep running motors
+    while((left_encoder.Counts() + right_encoder.Counts()) / 2 < counts);
+
+    //Turn off motors
+    right_motor.Stop();
+    left_motor.Stop();
+}
+void move_forward(int percent, double distance) //using encoders
+{
+    float radius=1.5;
+    int counts;
+
+    //Determine counts from distance
+    counts = distance*VEX_COUNTS/2/PI/radius;
+    
+    //Reset encoder counts
+    right_encoder.ResetCounts();
+    left_encoder.ResetCounts();
+
+    //Set both motors to desired percent
+    right_motor.SetPercent(-percent-.5);
+    left_motor.SetPercent(percent);
+    
+    //While the average of the left and right encoder is less than counts,
+    //keep running motors
+    while((left_encoder.Counts() + right_encoder.Counts()) / 2 < counts);
+    LCD.Write("it should be stoping now\n");
+
+    //Turn off motors
+    right_motor.Stop();
+    left_motor.Stop();
+}
+void move_backward(int percent, double distance) //using encoders
+{
+    float radius=1.5;
+    int counts;
+
+    //Determine counts from distance
+    counts = distance*VEX_COUNTS/2/PI/radius;
+
+    //Reset encoder counts
+    right_encoder.ResetCounts();
+    left_encoder.ResetCounts();
+
+    //Set both motors to desired percent
+    right_motor.SetPercent(percent+.5);
+    left_motor.SetPercent(-percent);
+    
+    //While the average of the left and right encoder is less than counts,
+    //keep running motors
+    while((left_encoder.Counts() + right_encoder.Counts()) / 2 < counts);
+    LCD.Write("it should be stoping now\n");
+
+    //Turn off motors
+    right_motor.Stop();
+    left_motor.Stop();
+    
+}
+void move_backward_ramp(int percent, double distance) //using encoders
+{
+    float radius=1.5;
+    int counts;
+
+    //Determine counts from distance
+    counts = distance*VEX_COUNTS/2/PI/radius;
+
+    //Reset encoder counts
+    right_encoder.ResetCounts();
+    left_encoder.ResetCounts();
+
+    //Set both motors to desired percent
+    right_motor.SetPercent(percent+1);
+    left_motor.SetPercent(-percent);
+    
+    //While the average of the left and right encoder is less than counts,
+    //keep running motors
+    while((left_encoder.Counts() + right_encoder.Counts()) / 2 < counts);
+    LCD.Write("it should be stoping now\n");
+
+    //Turn off motors
+    right_motor.Stop();
+    left_motor.Stop();
+    
+}
+void move_backward_window(int percent, double distance) //using encoders
+{
+    float radius=1.5;
+    int counts;
+
+    //Determine counts from distance
+    counts = distance*VEX_COUNTS/2/PI/radius;
+
+    //Reset encoder counts
+    right_encoder.ResetCounts();
+    left_encoder.ResetCounts();
+
+    //Set both motors to desired percent
+    right_motor.SetPercent(percent+15);
+    left_motor.SetPercent(-percent);
+    
+    //While the average of the left and right encoder is less than counts,
+    //keep running motors
+    while((left_encoder.Counts() + right_encoder.Counts()) / 2 < counts);
+    LCD.Write("it should be stoping now\n");
+
+    //Turn off motors
+    right_motor.Stop();
+    left_motor.Stop();
+    
+}
+void move_arm_up(int percent, float time)
+{
+    // Move arm
+    arm_motor.SetPercent(percent);
+    Sleep(time);
+    arm_motor.Stop();
+}
+void move_arm_down(int percent, float time)
+{
+    // Move arm
+    arm_motor.SetPercent(-percent);
+    Sleep(time);
+    arm_motor.Stop();
+}
+
+void follow_line()
+{
+
+    int state = MIDDLE;
+    switch(state)
+        {
+            case MIDDLE:
+                left_motor.SetPercent(25); 
+                right_motor.SetPercent(-27);
+
+                if(right_opto.Value() > 3.1) // These values have to be changed for each robot
+                {
+                    state = RIGHT;
+                }
+                if(left_opto.Value() > 3.1)
+                {
+                    state = LEFT;
+                }
+                break;
+            case LEFT:
+                left_motor.SetPercent(10);
+                right_motor.SetPercent(-25);
+
+                if(left_opto.Value() < 3.1)
+                {
+                    state = MIDDLE;
+                }
+                break;
+            case RIGHT:
+                left_motor.SetPercent(25);
+                right_motor.SetPercent(-10);
+
+                if(right_opto.Value() < 3.1)
+                {
+                    state = MIDDLE;
+                }
+                break;
+            default:
+                LCD.WriteLine("brb crying");
+        }
+        Sleep(50);
+}
+
+
+int main(void)
+{
+    int a, motor_percent=30, state, lever;
+
+    RCS.InitializeTouchMenu("0910B2EGL");
+    lever = RCS.GetLever();
+    // Wait for light to start
+    LCD.WriteLine(cds.Value());
+    while(cds.Value() > 2.8); // REVISE WITH VALUES
+    LCD.WriteLine(cds.Value());
+    LCD.WriteLine("Starting now");
+    Sleep(500);
+
+    // while(!LCD.Touch(&a,&a));
+    // while(LCD.Touch(&a,&a));
+    /// LCD.Clear();
+    
+    // Drive to apple bucket
+    move_forward(motor_percent,21);
+    LCD.WriteLine(left_encoder.Counts());
+    LCD.WriteLine(right_encoder.Counts());
+    Sleep(2000);
+    turn_left(motor_percent,40);
+    move_forward(motor_percent,3.5); // SWITCH WITH LINE FOLLOWING WHEN IT WORKS
+    Sleep(1000);
+
+    // Pick up apple bucket
+    //move_arm_up(15,3000);
+
+    // Drive to table/crate
+    turn_right(motor_percent,15);
+    move_backward(motor_percent,23);
+    turn_right(motor_percent,75);
+    move_forward(motor_percent,40);
+    Sleep(2000);
+
+    // Drop off apple bucket
+    //move_arm_down(15,3000);
+
+    // Drive to levers
+    move_backward(motor_percent,4);
+    turn_left(motor_percent,90);
+    move_forward(motor_percent,8);
+    turn_right(motor_percent,45);
+
+    // Drive to correct lever
+    switch(lever)
+    {
+        case(0): // left (A)
+        LCD.WriteLine("Lever: A");
+        turn_left(motor_percent,45);
+        move_forward(motor_percent,7);
+        turn_right(motor_percent,45);
+        move_forward(motor_percent,8); // SWITCH WITH LINE FOLLOWING WHEN IT WORKS
+        break;
+
+        case(1): // middle (B)
+        LCD.WriteLine("Lever: B");
+        move_forward(motor_percent,15); // SWITCH WITH LINE FOLLOWING WHEN IT WORKS
+        break;
+
+        case(2): // right (C)
+        LCD.WriteLine("Lever: C");
+        turn_right(motor_percent,45);
+        move_forward(motor_percent,7);
+        turn_left(motor_percent,45);
+        move_forward(motor_percent,8); // SWITCH WITH LINE FOLLOWING WHEN IT WORKS
+        break;
+
+        default:
+        LCD.WriteLine("brb crying");
+    }
+    
+    // Flip lever
+    // move_arm_down(15,3000);
+    // move_backward(motor_percent,2);
+    // move_arm_down(15,1000);
+    // Sleep(5000); // THIS IS FOR BONUS
+    // move_forward(motor_percent,2);
+    // move_arm_up(15,4000);
+
+    Sleep(2000); //Wait for counts to stabilize
+    //Print out data
+    LCD.Write("Actual LE Counts: ");
+    LCD.WriteLine(left_encoder.Counts());
+    LCD.Write("Actual RE Counts: ");
+    LCD.WriteLine(right_encoder.Counts());
+
+    return 0;
+}
