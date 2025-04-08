@@ -431,3 +431,43 @@ void bringItHome(float percent){
     move_forward(65, 50);
 }
 
+
+void move_forward_new3(float percent, float distance){
+
+    float wheelRadius=1.5;
+
+    //calculate the distance counts
+    int counts = distance*VEX_COUNTS/(2*PI*wheelRadius);
+    
+    //Reset encoder counts
+    right_encoder.ResetCounts();
+    left_encoder.ResetCounts();
+
+    int left_motor_pecent = percent;
+    int right_motor_pecent = -percent;
+
+    left_motor.SetPercent(left_motor_pecent);
+    right_motor.SetPercent(right_motor_pecent);
+
+    while((left_encoder.Counts() + right_encoder.Counts()) / 2 < counts){
+        int error = left_encoder.Counts() - right_encoder.Counts();
+
+        if(abs(error) > 1){
+            if(error > 0){
+                left_motor_pecent = percent - 1;
+                right_motor_pecent = -(percent + 1);
+            } else {
+                left_motor_pecent = percent + 1;
+                right_motor_pecent = -(percent - 1);
+            }
+
+            //update the motors
+            left_motor.SetPercent(left_motor_pecent);
+            right_motor.SetPercent(right_motor_pecent);
+        }
+    }
+
+    //Turn off motors
+    right_motor.Stop();
+    left_motor.Stop();
+}
