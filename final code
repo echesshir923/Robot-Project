@@ -7,7 +7,7 @@
 
 //Declarations for encoders & motors
 DigitalEncoder left_encoder(FEHIO::P2_0);
-DigitalEncoder right_encoder(FEHIO::P2_3);
+DigitalEncoder right_encoder(FEHIO::P2_5);
 DigitalEncoder arm_encoder(FEHIO::P2_4);
 FEHMotor left_motor(FEHMotor::Motor0,9.0);
 FEHMotor right_motor(FEHMotor::Motor1,9.0); // RIGHT MOTOR IS BACKWARDS
@@ -17,7 +17,7 @@ AnalogInputPin cds(FEHIO::P0_1);
 //Constants
 #define PI 3.14159265359
 #define VEX_COUNTS 180
-#define RADIUS 4
+#define RADIUS 4.5
 
 
 //prototypes for general movement
@@ -36,7 +36,7 @@ void driveToApple(float percent);
 void pickupAndCarryApple(float percent);
 void driveToLever(float percent);
 void preformLever(float Percent);
-void hitButton();
+void hitButton(float percent);
 void driveToWindown(float percent);
 void ramWindow();
 void bringItHome(float percent);
@@ -46,6 +46,7 @@ int main(void)
 {
     float travelPercent=35, arm_percent=25;
     
+
     //connect to course
     RCS.InitializeTouchMenu("0910B2EGL");
     // Wait for light to start
@@ -55,10 +56,11 @@ int main(void)
     Sleep(500);
 
     //reset robot before new run
-    moveArmUp(10000);
+    moveArmUp(4000);
     left_encoder.ResetCounts();
     right_encoder.ResetCounts();
 
+    
     //start the run
     driveToCompost(travelPercent);
     preformCompost();
@@ -66,11 +68,10 @@ int main(void)
     pickupAndCarryApple(travelPercent);
     driveToLever(travelPercent);
     preformLever(travelPercent);
-    driveToButtons(travelPercent);
-    hitButton();
-    driveToWindown(travelPercent);
-    ramWindow();
-    bringItHome(travelPercent);
+    hitButton(travelPercent);
+    // driveToWindown(travelPercent);
+    // ramWindow();
+    // bringItHome(travelPercent);
 
     Sleep(2000); 
     LCD.Write("Actual LE Counts: ");
@@ -101,11 +102,12 @@ void turn_right(int degrees) //using encoders
 
     //While the average of the left and right encoder is less than counts,
     //keep running motors
-    while((left_encoder.Counts() + right_encoder.Counts()) / 2 < counts);
+    while((left_encoder.Counts() < counts) && (right_encoder.Counts() < counts));
 
     //Turn off motors
     right_motor.Stop();
     left_motor.Stop();
+    Sleep(20);
 }
 void turn_left(int degrees) //using encoders
 {
@@ -128,13 +130,15 @@ void turn_left(int degrees) //using encoders
 
     //While the average of the left and right encoder is less than counts,
     //keep running motors
-    while((left_encoder.Counts() + right_encoder.Counts()) / 2 < counts);
+    while((left_encoder.Counts() < counts) && (right_encoder.Counts() < counts));
+
 
     //Turn off motors
     right_motor.Stop();
     left_motor.Stop();
+    Sleep(20);
 }
-void move_forward(float percent, float distance) //using encoders
+void move_forward_old(float percent, float distance) //using encoders
 {
     float radius=1.5;
     int counts;
@@ -159,7 +163,7 @@ void move_forward(float percent, float distance) //using encoders
     right_motor.Stop();
     left_motor.Stop();
 }
-void move_backward(float percent, float distance) //using encoders
+void move_backward_old(float percent, float distance) //using encoders
 {
     float radius=1.5;
     int counts;
@@ -183,7 +187,7 @@ void move_backward(float percent, float distance) //using encoders
     //Turn off motors
     right_motor.Stop();
     left_motor.Stop();
-    
+    Sleep(20);
 }
 void moveArmUp(int time)
 {
@@ -205,15 +209,95 @@ void moveArmDown(int time)
     LCD.WriteLine("Should be stooping now");
     arm_motor.Stop();
 }
+void move_forward(float percent, float distance){
+
+    float wheelRadius=1.5;
+
+    //calculate the distance counts
+    int counts = distance*VEX_COUNTS/(2*PI*wheelRadius);
+    
+    //Reset encoder counts
+    right_encoder.ResetCounts();
+    left_encoder.ResetCounts();
+
+    int left_motor_pecent = percent;
+    int right_motor_pecent = -percent;
+
+    left_motor.SetPercent(left_motor_pecent);
+    right_motor.SetPercent(right_motor_pecent);
+
+    while((left_encoder.Counts() + right_encoder.Counts()) / 2 < counts){
+        int error = left_encoder.Counts() - right_encoder.Counts();
+
+        if(abs(error) > 2){
+            if(error > 0){
+                left_motor_pecent = percent - 1;
+                right_motor_pecent = -(percent + 1);
+            } else {
+                left_motor_pecent = percent + 1;
+                right_motor_pecent = -(percent - 1);
+            }
+
+            //update the motors
+            left_motor.SetPercent(left_motor_pecent);
+            right_motor.SetPercent(right_motor_pecent);
+        }
+    }
+
+    //Turn off motors
+    right_motor.Stop();
+    left_motor.Stop();
+    Sleep(20);
+}
+void move_backward(float percent, float distance){
+
+    float wheelRadius=1.5;
+
+    //calculate the distance counts
+    int counts = distance*VEX_COUNTS/(2*PI*wheelRadius);
+    
+    //Reset encoder counts
+    right_encoder.ResetCounts();
+    left_encoder.ResetCounts();
+
+    int left_motor_pecent = percent;
+    int right_motor_pecent = -percent;
+
+    left_motor.SetPercent(-left_motor_pecent);
+    right_motor.SetPercent(-right_motor_pecent);
+
+    while((left_encoder.Counts() + right_encoder.Counts()) / 2 < counts){
+        int error = left_encoder.Counts() - right_encoder.Counts();
+
+        if(abs(error) > 2){
+            if(error > 0){
+                left_motor_pecent = percent - 1;
+                right_motor_pecent = -(percent + 1);
+            } else {
+                left_motor_pecent = percent + 1;
+                right_motor_pecent = -(percent - 1);
+            }
+
+            //update the motors
+            left_motor.SetPercent(-left_motor_pecent);
+            right_motor.SetPercent(-right_motor_pecent);
+        }
+    }
+
+    //Turn off motors
+    right_motor.Stop();
+    left_motor.Stop();
+    Sleep(20);
+}
 
 
 //functions for completing the course
 void driveToCompost(float percent){
-    move_forward(percent, 7);
-    turn_left(50);
-    move_forward(percent, 15);
-    turn_left(97);
-    move_forward(percent,6);
+    move_forward(percent, 9);
+    turn_left(47);
+    move_forward(percent, 14.25);
+    turn_left(90);
+    move_forward(percent,1.75);
 }
 //spins compost bin
 void preformCompost(){
@@ -222,87 +306,97 @@ void preformCompost(){
     //turn arm to spin the compost all the way
     moveArmDown(3000);
     Sleep(500);
-    move_backward(motorPercent, 1);
+    // move_backward(motorPercent, 1);
     moveArmUp(3000);
-    move_forward(motorPercent, 1);
-    moveArmDown(1000);
+    // move_forward(motorPercent, 1);
+    // moveArmDown(3000);
 
-    //turn arm to spin the compost back all the way
-    moveArmUp(3000);
-    Sleep(500);
-    move_backward(motorPercent, 1);
-    moveArmDown(3000);
-    move_forward(motorPercent, 1);
-    moveArmUp(2000);
+    // //turn arm to spin the compost back all the way
+    // moveArmUp(1500);
+    // Sleep(500);
+    // move_backward(motorPercent, 1);
+    // moveArmDown(3000);
+    // move_forward(motorPercent, 1);
+    // moveArmUp(1000);
 }
 //lines up robot with apple
 void driveToApple(float percent){
-    //reset the arm and poerly inset it
-    moveArmUp(5000);
-    moveArmDown(1300);//CHANGE LATER TO MAKE WORK
-
     //back away from compost bin
     move_backward(percent, 1);
     turn_right(45);
-    move_backward(percent, 9.5);
-    turn_right(45);
-    move_forward(percent, 10);
+    move_backward(percent, 7);
+    turn_left(45);
+
+    //reset the arm and poerly inset it
+    moveArmUp(3200);
+    moveArmDown(2858);//exact time ti pick up apple
+
+    move_backward(percent, 4);
+    turn_right(81);
+    move_forward(percent, 3);
 
 }
 //raises arm to pick up apple then carries it to the table
 void pickupAndCarryApple(float percent){
     //lift apple
-    moveArmUp(5000);
+    moveArmUp(1000);
 
     //back into wall
-    move_backward(percent,1);
+    move_backward(percent,2);
     turn_right(45);
-    move_backward(percent,10);
+    move_backward(percent,8);
     turn_left(45);
-    move_backward(percent,14);
+    move_backward(percent,20);
+    Sleep(100);
 
     //drive up ramp to table
-    move_forward(percent,1);
-    turn_right(90);
-    move_forward(percent, 36);
+    move_forward(percent,2);
+    turn_right(80);
+    move_forward(percent, 40);
 
+    //back slightly away before setting down apple
+    move_backward(percent, 0.5);
     //lower arm and back up
-    moveArmDown(1500);
+    moveArmDown(250);
+    Sleep(500);
     move_backward(percent, 2);
 }
 //backs off of tabel and centers inbetween all levers
 void driveToLever(float percent){
     //back up from table and center between the three levers
     move_backward(percent, 2);
-    turn_left(90);
-    move_forward(percent, 8);
-    turn_right(45);
+    turn_left(80);
+    move_backward(percent, 2);
+    move_forward(percent, 5.25);
+    turn_right(42);
 }
 //picks lever, preforms proper one, then drives backwards to line up with light
 void preformLever(float percent){
     //get the needed lever
     int lever = RCS.GetLever();
-    // Drive to correct lever
+
+    lever = 1;
     switch(lever)
     {
         case(0): // left (A)
         //drive to
         LCD.WriteLine("Lever: A");
         turn_left(45);
-        move_forward(percent,7);
+        move_forward(percent,5.5);
         turn_right(45);
-        move_forward(percent,8);
+        move_forward(percent,11);
 
         //perform
-        moveArmDown(1500);
+        moveArmDown(1000);
         move_backward(percent,2);
-        moveArmDown(750);
+        moveArmDown(300);
         Sleep(4000);//wait 4 seconds to get bonus
         move_forward(percent, 2);
-        moveArmUp(2750);
+        moveArmUp(2000);
 
         //back away from lever
         move_backward(percent, 6.25);
+        turn_left(45);
         break;
 
         case(1): // middle (B)
@@ -310,34 +404,41 @@ void preformLever(float percent){
         move_forward(percent,15);
 
         //perform
-        moveArmDown(1500);
+        moveArmDown(1000);
         move_backward(percent,2);
-        moveArmDown(750);
+        moveArmDown(300);
         Sleep(4000);//wait 4 seconds to get bonus
         move_forward(percent, 2);
-        moveArmUp(2750);
+        moveArmUp(2000);
 
         //back away from lever
-        move_backward(percent, 9.5);
+        move_backward(percent, 10);
+        turn_left(42);
         break;
 
         case(2): // right (C)
         LCD.WriteLine("Lever: C");
+        move_forward(percent, 5);
         turn_right(45);
-        move_forward(percent, 7);
-        turn_left(45);
-        move_forward(percent, 8);
+        move_forward(percent, 6);
+        turn_left(50);
+        move_forward(percent, 6.5);
 
         //perform
-        moveArmDown(1500);
+        moveArmDown(1000);
         move_backward(percent,2);
-        moveArmDown(750);
+        moveArmDown(300);
         Sleep(4000);//wait 4 seconds to get bonus
         move_forward(percent, 2);
-        moveArmUp(2750);
+        moveArmUp(2000);
 
         //back away from lever
-        move_backward(percent, 13.5);
+        move_backward(percent, 5);
+        turn_right(45);
+        move_backward(percent, 3);
+        turn_left(45);
+        move_backward(percent, 6.5);
+        turn_left(45);
         break;
 
         default:
@@ -345,18 +446,20 @@ void preformLever(float percent){
     }
 }
 //drives forward untill it sees the light
-void PreformButtons(float percent){
+void hitButton(float percent){
 
     left_motor.SetPercent(percent);
     right_motor.SetPercent(-percent);
 
+    // none: 3.25+   red: 2.72    blue: 3.082
+
     //drive untill over light
-    while(cds.Value() > 2.8);
+    while(cds.Value() > 3.2);
     left_motor.Stop();
     right_motor.Stop();
 
-    //see which button to hit
-    if (cds.Value() > 2.8 && cds.Value() < 2.8){
+    //red button
+    if (cds.Value() > 2.5 && cds.Value() < 2.95){
         //hit proper button
         turn_right(90);
         move_forward(percent, 3);
@@ -369,7 +472,7 @@ void PreformButtons(float percent){
         move_backward(percent, 3);
         turn_left(90);
 
-    } else if(cds.Value() > 2.8 && cds.Value() < 2.8){
+    } else if(cds.Value() > 3 && cds.Value() < 3.15){ // blue button
         //hit proper button
         turn_left(45);
         move_forward(percent,3);
@@ -431,43 +534,3 @@ void bringItHome(float percent){
     move_forward(65, 50);
 }
 
-
-void move_forward_new3(float percent, float distance){
-
-    float wheelRadius=1.5;
-
-    //calculate the distance counts
-    int counts = distance*VEX_COUNTS/(2*PI*wheelRadius);
-    
-    //Reset encoder counts
-    right_encoder.ResetCounts();
-    left_encoder.ResetCounts();
-
-    int left_motor_pecent = percent;
-    int right_motor_pecent = -percent;
-
-    left_motor.SetPercent(left_motor_pecent);
-    right_motor.SetPercent(right_motor_pecent);
-
-    while((left_encoder.Counts() + right_encoder.Counts()) / 2 < counts){
-        int error = left_encoder.Counts() - right_encoder.Counts();
-
-        if(abs(error) > 1){
-            if(error > 0){
-                left_motor_pecent = percent - 1;
-                right_motor_pecent = -(percent + 1);
-            } else {
-                left_motor_pecent = percent + 1;
-                right_motor_pecent = -(percent - 1);
-            }
-
-            //update the motors
-            left_motor.SetPercent(left_motor_pecent);
-            right_motor.SetPercent(right_motor_pecent);
-        }
-    }
-
-    //Turn off motors
-    right_motor.Stop();
-    left_motor.Stop();
-}
