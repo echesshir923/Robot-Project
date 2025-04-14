@@ -34,12 +34,14 @@ void driveToCompost(float percent);
 void preformCompost();
 void driveToApple(float percent);
 void pickupAndCarryApple(float percent);
+void pickupAndCarryAppleNEW(float percent);
 void driveToLever(float percent);
 void preformLever(float Percent);
 void hitButton(float percent);
 void driveToWindown(float percent);
 void ramWindow();
 void bringItHome(float percent);
+void SkipWindow();
 
 
 int main(void)
@@ -55,23 +57,28 @@ int main(void)
     LCD.WriteLine("Starting now");
     Sleep(500);
 
+    //hit start button
+    move_backward(30,1);
+    move_forward(30,1);
+
     //reset robot before new run
     moveArmUp(4000);
     left_encoder.ResetCounts();
     right_encoder.ResetCounts();
 
-    
     //start the run
     driveToCompost(travelPercent);
     preformCompost();
     driveToApple(travelPercent);
+    //pickupAndCarryAppleNEW(travelPercent);
     pickupAndCarryApple(travelPercent);
     driveToLever(travelPercent);
     preformLever(travelPercent);
     hitButton(travelPercent);
-    driveToWindown(travelPercent);
-    ramWindow();
+    // driveToWindown(travelPercent);
+    // ramWindow();
     bringItHome(travelPercent);
+    // SkipWindow();
 
     Sleep(2000); 
     LCD.Write("Actual LE Counts: ");
@@ -294,7 +301,7 @@ void move_backward(float percent, float distance){
 //functions for completing the course
 void driveToCompost(float percent){
     move_forward(percent, 8);
-    turn_left(48);
+    turn_left(47.5);
     move_forward(percent, 14.1);
     turn_left(89);
     move_forward(percent,1.5);
@@ -329,11 +336,12 @@ void driveToApple(float percent){
 
     //reset the arm and poerly inset it
     moveArmUp(3200);
-    moveArmDown(2950);//exact time t0 pick up apple
+    moveArmDown(2955);//exact time to pick up apple
 
     move_backward(percent, 4);
     turn_right(86);
-    move_forward(percent, 2);
+    move_forward(percent, 3.1);
+    move_backward(percent,.45);
 
 }
 //raises arm to pick up apple then carries it to the table
@@ -356,12 +364,60 @@ void pickupAndCarryApple(float percent){
 
     //calibrate
     turn_left(90);
-    move_backward(percent, 6);
+    move_backward(percent, 9);
     move_forward(percent, 2);
     turn_right(83);
 
     //drive into table
-    move_forward(percent, 4);
+    move_forward(30, 4);
+
+    //back slightly away before setting down apple
+    move_backward(percent, 0.5);
+    //lower arm and back up
+    moveArmDown(250);
+    Sleep(500);
+    move_backward(percent, 2);
+}
+void pickupAndCarryAppleNEW(float percent){
+    //lift apple
+    moveArmUp(1200);
+
+    //back into window wall
+    move_backward(percent,2);
+    turn_left(85);
+    move_backward(percent,10);
+    Sleep(100);
+    move_forward(percent,1.1);
+    turn_right(90);
+
+    //ram window
+    right_motor.SetPercent(75);
+    left_motor.SetPercent(-50);
+    Sleep(2000);
+    right_motor.Stop();
+    left_motor.Stop();
+    Sleep(3000);
+
+    //drive to wall by ramp
+    move_forward(percent,2);
+    turn_left(50);
+    move_forward(percent,18);
+    turn_right(50);
+    move_backward(percent,30);
+
+    //drive up ramp to right before the table
+    move_forward(percent,2);
+    turn_right(80);
+    move_forward(percent, 35);
+
+    //calibrate
+    turn_left(90);
+    move_backward(percent, 9);
+    move_forward(percent, 2);
+    turn_right(83);
+
+    //drive into table
+    move_forward(30, 4);
 
     //back slightly away before setting down apple
     move_backward(percent, 0.5);
@@ -375,6 +431,7 @@ void driveToLever(float percent){
     //back up from table and center between the three levers
     move_backward(percent, 2);
     turn_left(80);
+    move_backward(percent,5);
     move_forward(percent, 5.25);
     turn_right(42);
 }
@@ -411,20 +468,21 @@ void preformLever(float percent){
 
         case(1): // middle (B)
         LCD.WriteLine("Lever: B");
-        move_forward(percent,15);
+        move_forward(percent,16.75);
 
         //perform
-        moveArmDown(1000);
+        moveArmDown(1100);
         move_backward(percent,2);
         moveArmDown(100);
-        Sleep(4000);//wait 4 seconds to get bonus
+        Sleep(5000);//wait 5 seconds to get bonus
         move_forward(percent, 2);
         moveArmUp(1000);
+        moveArmUp(500);
 
         //back away from lever
         move_backward(percent, 10.25);
         turn_left(42);
-        moveArmUp(1000);//dont need arm anymore
+        moveArmUp(1300);//dont need arm anymore
         break;
 
         case(2): // right (C)
@@ -461,49 +519,57 @@ void preformLever(float percent){
 //drives forward untill it sees the light
 void hitButton(float percent){
 
+    bool cont=true;
     LCD.WriteLine("hitting button now");
     left_motor.SetPercent(percent);
     right_motor.SetPercent(-percent);
 
     // none: 3.25+   red: 2.72    blue: 3.082
 
-    //drive untill over light
-    while(cds.Value() > 3.2);
-    LCD.WriteLine("senced the light");
+    double start = TimeNow();
+
+    //drive until over light
+    while(cds.Value() > 3.2 && (TimeNow()-start)<10);
+    if((TimeNow()-start)>10)
+    {
+        cont=false;
+    }
+    LCD.WriteLine("sensed the light");
     left_motor.Stop();
     right_motor.Stop();
     Sleep(300);
 
     //red button
-    if (cds.Value() > 2.5 && cds.Value() < 3){
+    if (cds.Value() < 3 && cont){
         //hit proper button
-        turn_right(90);
-        move_forward(percent, 3);
-        turn_left(90);
-        move_forward(percent, 7);
+        move_forward(percent,8);
+        move_backward(percent, .5);
+        turn_right(15);
+        turn_left(15);
 
-        //reset to center
-        move_backward(percent, 7);
-        turn_right(90);
-        move_backward(percent, 3);
-        turn_left(90);
+        //move back
+        move_backward(percent,8);
 
-    } else if(cds.Value() > 3 && cds.Value() < 3.15){ // blue button
+    } else if(cds.Value() > 3 && cont){ // blue button
         //hit proper button
-        turn_left(90);
-        move_forward(percent,3);
-        turn_right(90);
-        move_forward(percent,7);
+        move_forward(percent,8);
+        move_backward(percent, .5);
+        turn_left(15);
+        turn_right(15);
 
-        //reset to center
-        move_backward(percent,7);
-        turn_left(90);
-        move_backward(percent,3);
-        turn_right(90);
+        //move back
+        move_backward(percent,8);
     } else{
         LCD.WriteLine("stop this im crying");
     }
 
+}
+void SkipWindow(){
+    int percent=35;
+    move_backward(percent,20);
+    move_forward(percent,2);
+    turn_left(85);
+    move_forward(50,50);
 }
 //back into wall and then drive to window
 void driveToWindown(float percent){
@@ -519,7 +585,7 @@ void driveToWindown(float percent){
     //get to window
     move_backward(percent,7);
     turn_left(45);
-    move_backward(percent, 8.75);
+    move_backward(percent, 8.9);
     turn_right(45);
     move_backward(percent,5.25);
 }
@@ -540,8 +606,8 @@ void ramWindow(){
     turn_right(20);
 
     //ram it again
-    right_motor.SetPercent(-35);
-    left_motor.SetPercent(50);
+    right_motor.SetPercent(-50);
+    left_motor.SetPercent(35);
     Sleep(1000);
     right_motor.Stop();
     left_motor.Stop();
@@ -549,11 +615,16 @@ void ramWindow(){
     //drive around window and get ready to finish
     turn_left(30);
     move_forward(35, 10);
+    turn_right(30);
+    move_forward(35,10);
+    move_backward(35,3);
     turn_right(100);
 }
 //end the run
 void bringItHome(float percent){
     LCD.WriteLine("IT'S PARTY TIME!!!!!!!!!");
-    move_forward(65, 50);
+    move_backward(percent,20);
+    move_forward(percent,2);
+    turn_left(85);
+    move_forward(50,50);
 }
-
