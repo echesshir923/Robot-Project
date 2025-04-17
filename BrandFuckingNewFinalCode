@@ -288,7 +288,7 @@ void driveToShitBucket(float percent){
     //reset the arm and poerly inset it
     moveArmUp(4000);
     Sleep(100);
-    moveArmDown(2730);//exact time to pick up apple originally 2955, changed to 2965, now to 2945
+    moveArmDown(2800);//exact time to pick up apple originally 2955, changed to 2965, now to 2945
 
     move_backward(percent, 4);
     turn_right(86);
@@ -325,7 +325,7 @@ void pickupAndCarryShitBucket(float percent){
     turn_right(90);
 
     //drive into table
-    move_forward(30, 4);
+    move_forward(30, 2);
 
     //back slightly away before setting down apple
     move_backward(percent, 0.5);
@@ -374,7 +374,7 @@ void pullIt(float percent){
         Sleep(1000);
         
         //check if we actually hit the lever
-        while((RCS.isLeverFlipped() != 0) && (j <= 25)){
+        while((RCS.isLeverFlipped() != 1) && (j <= 25)){
 
             if(RCS.isLeverFlipped() != 1){
                 moveArmUp(500);
@@ -401,7 +401,7 @@ void pullIt(float percent){
         Sleep(4000);//wait 5 seconds to get bonus
         
         move_forward(percent, 2);
-        moveArmUp(600);
+        moveArmUp(500);
 
         j=0;
         //check if the lever went back up
@@ -446,7 +446,7 @@ void pullIt(float percent){
 
         
         //check if we actually hit the lever
-        while((RCS.isLeverFlipped() != 0) && (j <= 25)){
+        while((RCS.isLeverFlipped() != 1) && (j <= 25)){
 
             if(RCS.isLeverFlipped() != 1){
                 moveArmUp(500);
@@ -501,8 +501,9 @@ void pullIt(float percent){
             }
         }
 
+        turn_right(45);
         moveArmUp(1300);//dont need arm anymore
-        move_backward(percent,32); // drive near window
+        move_backward(percent,29); // drive near window
 
         break;
 //----------------------------------------------------------------------
@@ -520,7 +521,7 @@ void pullIt(float percent){
 
         
         //check if we actually hit the lever
-        while((RCS.isLeverFlipped() != 0) && (j <= 25)){
+        while((RCS.isLeverFlipped() != 1) && (j <= 25)){
 
             if(RCS.isLeverFlipped() != 1){
                 moveArmUp(500);
@@ -591,6 +592,10 @@ void pullIt(float percent){
     //get rid of arm not needed
     moveArmUp(3000);
 }
+
+
+
+
 //drive to window and position the robot
 void driveToWindow(float percent){
     //calibrate with flower basket
