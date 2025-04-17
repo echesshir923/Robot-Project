@@ -1,0 +1,630 @@
+#include <FEHLCD.h>
+#include <FEHIO.h>
+#include <FEHUtility.h>
+#include <FEHMotor.h>
+#include <math.h>
+#include <FEHRCS.h>
+#include <FEHBattery.h>
+
+//Declarations for encoders & motors
+DigitalEncoder left_encoder(FEHIO::P2_0);
+DigitalEncoder right_encoder(FEHIO::P2_5);
+DigitalEncoder arm_encoder(FEHIO::P2_4);
+FEHMotor left_motor(FEHMotor::Motor0,9.0);
+FEHMotor right_motor(FEHMotor::Motor1,9.0); // RIGHT MOTOR IS BACKWARDS
+FEHMotor arm_motor(FEHMotor::Motor2,9.0);
+AnalogInputPin cds(FEHIO::P0_1);
+
+//Constants
+#define PI 3.14159265359
+#define VEX_COUNTS 180
+#define RADIUS 4.5
+
+
+//prototypes for general movement
+void turn_right(int degrees);
+void turn_left(int degrees);
+void move_forward(float percent, float distance);
+void move_backward(float percent, float distance);
+void moveArmUp(int time);
+void moveArmDown(int time);
+
+//prototypes for tasks
+void driveToCompost(float percent);
+void spinThatCompost();
+void driveToShitBucket(float percent);
+void RamWindow(float percent);
+void pickupAndCarryShitBucket(float percent);
+void driveToLever(float percent);
+void pullIt(float Percent);
+void hitButton(float percent);
+void YourAlmostToTheBorder(float percent);
+
+
+
+int main(void)
+{
+    float travelPercent=35;
+
+    //connect to course
+    RCS.InitializeTouchMenu("0910B2EGL");
+    // Wait for light to start
+    LCD.WriteLine(cds.Value());
+    while(cds.Value() > 2.8); // REVISE WITH VALUES
+    LCD.WriteLine("Starting now");
+    Sleep(500);
+
+
+    //hit start button
+    move_backward(30,0.5);
+    move_forward(30,0.5);
+
+    //reset robot before new run by moving the arm all the way back and reseting the counts
+    moveArmUp(4000);
+    left_encoder.ResetCounts();
+    right_encoder.ResetCounts();
+
+    //start the run
+    driveToCompost(travelPercent);
+    spinThatCompost();
+    driveToShitBucket(travelPercent);
+    pickupAndCarryShitBucket(travelPercent);
+    driveToLever(travelPercent);
+    pullIt(travelPercent);
+    hitButton(travelPercent);
+    YourAlmostToTheBorder(travelPercent);
+}
+
+//simple movement functions that work for our purposes
+void turn_right(int degrees) //using encoders
+{
+    float percent = 35;
+    double distance, radius=1.5;
+    int counts;
+
+    //Calculate arc distance
+    distance = (RADIUS*PI*degrees)/180;
+    // Calculate counts
+    counts = distance*VEX_COUNTS/2/PI/radius;
+
+    //Reset encoder counts
+    right_encoder.ResetCounts();
+    left_encoder.ResetCounts();
+    //Set both motors to desired percent
+    right_motor.SetPercent(percent);
+    left_motor.SetPercent(percent);
+
+    //While the average of the left and right encoder is less than counts,
+    //keep running motors
+    while((left_encoder.Counts() < counts) && (right_encoder.Counts() < counts));
+
+    //Turn off motors
+    right_motor.Stop();
+    left_motor.Stop();
+    Sleep(20);
+}
+void turn_left(int degrees) //using encoders
+{
+    float percent = 35;
+    double distance, radius=1.5;
+    int counts;
+
+    //Calculate arc distance
+    distance = (RADIUS*PI*degrees)/180;
+    // Calculate counts
+    counts = distance*VEX_COUNTS/2/PI/radius;
+    
+    //Reset encoder counts
+    right_encoder.ResetCounts();
+    left_encoder.ResetCounts();
+    //Set both motors to desired percent
+    //hint: set right motor backwards, left motor forwards
+    right_motor.SetPercent(-percent);
+    left_motor.SetPercent(-percent);
+
+    //While the average of the left and right encoder is less than counts,
+    //keep running motors
+    while((left_encoder.Counts() < counts) && (right_encoder.Counts() < counts));
+
+
+    //Turn off motors
+    right_motor.Stop();
+    left_motor.Stop();
+    Sleep(20);
+}
+void moveArmUp(int time)
+{
+    //set a proper percent speed to move
+    float percent = 40;
+    // Move arm
+    arm_motor.SetPercent(percent);
+    //wait for desired time before stoping
+    Sleep(time);
+    LCD.WriteLine("Should be stooping now");
+    arm_motor.Stop();
+}
+void moveArmDown(int time)
+{
+    //set a proper percent speed to move
+    float percent = 40;
+    // Move arm
+    arm_motor.SetPercent(-percent);
+    //wait for desired time before stoping
+    Sleep(time);
+    LCD.WriteLine("Should be stooping now");
+    arm_motor.Stop();
+}
+void move_forward(float percent, float distance){
+
+    float wheelRadius=1.5;
+
+    //calculate the distance counts
+    int counts = distance*VEX_COUNTS/(2*PI*wheelRadius);
+    
+    //Reset encoder counts
+    right_encoder.ResetCounts();
+    left_encoder.ResetCounts();
+
+    int left_motor_pecent = percent;
+    int right_motor_pecent = -percent;
+
+    left_motor.SetPercent(left_motor_pecent);
+    right_motor.SetPercent(right_motor_pecent);
+
+    //wait for the counts on the robot to reach the desired amount before stopping the robot
+    while((left_encoder.Counts() + right_encoder.Counts()) / 2 < counts){
+        //check for error between the left and right wheel
+        int error = left_encoder.Counts() - right_encoder.Counts();
+
+        //if the error is more than 2 counts, fix it
+        if(abs(error) > 2){
+            //if the left is moving faster than the right then slow down the left and speed up the right
+            if(error > 0){
+                left_motor_pecent = percent - 1;
+                right_motor_pecent = -(percent + 1);
+            //if the right is moving faster than the left then slow down the right and speed up the left
+            } else {
+                left_motor_pecent = percent + 1;
+                right_motor_pecent = -(percent - 1);
+            }
+
+            //update the motors
+            left_motor.SetPercent(left_motor_pecent);
+            right_motor.SetPercent(right_motor_pecent);
+        }
+    }
+
+    //Turn off motors
+    right_motor.Stop();
+    left_motor.Stop();
+    Sleep(20);
+}
+void move_backward(float percent, float distance){
+
+    float wheelRadius=1.5;
+
+    //calculate the distance counts
+    int counts = distance*VEX_COUNTS/(2*PI*wheelRadius);
+    
+    //Reset encoder counts
+    right_encoder.ResetCounts();
+    left_encoder.ResetCounts();
+
+    int left_motor_pecent = percent;
+    int right_motor_pecent = -percent;
+
+    left_motor.SetPercent(-left_motor_pecent);
+    right_motor.SetPercent(-right_motor_pecent);
+
+    //wait for the counts on the robot to reach the desired amount before stopping the robot
+    while((left_encoder.Counts() + right_encoder.Counts()) / 2 < counts){
+        //check for error between the left and right wheel
+        int error = left_encoder.Counts() - right_encoder.Counts();
+
+        //if the error is more than 2 counts, fix it
+        if(abs(error) > 2){
+            //if the left is moving faster than the right then slow down the left and speed up the right
+            if(error > 0){
+                left_motor_pecent = percent - 1;
+                right_motor_pecent = -(percent + 1);
+            //if the right is moving faster than the left then slow down the right and speed up the left
+            } else {
+                left_motor_pecent = percent + 1;
+                right_motor_pecent = -(percent - 1);
+            }
+
+            //update the motors
+            left_motor.SetPercent(-left_motor_pecent);
+            right_motor.SetPercent(-right_motor_pecent);
+        }
+    }
+
+    //Turn off motors
+    right_motor.Stop();
+    left_motor.Stop();
+    Sleep(20);
+}
+
+
+//functions for completing the course
+void driveToCompost(float percent){
+    move_forward(percent, 8);
+    turn_left(47.5);
+    move_forward(percent, 14.1);
+    turn_left(89);
+    move_forward(percent,1.5);
+}
+//spins compost bin
+void spinThatCompost(){
+    float armPercent = 40;
+    float motorPercent = 40;
+    //turn arm to spin the compost all the way
+    moveArmDown(3000);
+    Sleep(500);
+    // move_backward(motorPercent, 1);
+    moveArmUp(3000);
+    // move_forward(motorPercent, 1);
+    // moveArmDown(3000);
+}
+//lines up robot with apple
+void driveToShitBucket(float percent){
+    //back away from compost bin
+    move_backward(percent, 1);
+    turn_right(45);
+    move_backward(percent, 7);
+    turn_left(45);
+
+    //reset the arm and poerly inset it
+    moveArmUp(4000);
+    Sleep(100);
+    moveArmDown(2730);//exact time to pick up apple originally 2955, changed to 2965, now to 2945
+
+    move_backward(percent, 4);
+    turn_right(86);
+    move_forward(percent, 3.1);
+    move_backward(percent,.6);
+
+}
+//drive to and open the window
+void RamWindow(float percent){
+    //back into window wall
+    move_backward(percent,2);
+    turn_left(85);
+    move_backward(percent,11);
+    Sleep(100);
+    move_forward(percent,1.4);
+    turn_right(87);
+    move_backward(percent,2);
+    Sleep(500);
+
+    //keep a clock going to stop after a while, give up after ten seconds
+    int Start = TimeNow();
+    //keep going unitll window is fully open TEST CODE DELTER LATER MAYBE
+    while(RCS.isWindowOpen() != 1 && (TimeNow() - Start) < 7){
+        right_motor.SetPercent(100);
+        left_motor.SetPercent(-50);
+        Sleep(300);
+        left_motor.Stop();
+        right_motor.Stop();
+        LCD.WriteLine("please");
+
+    }
+
+    // //ram window
+    // right_motor.SetPercent(100);
+    // left_motor.SetPercent(-50);
+    // Sleep(2000);
+    // left_motor.Stop();
+    // right_motor.Stop();
+    // Sleep(2000);
+    
+    // // check if close, if not keep it in the loop and open it
+    // if (RCS.isWindowOpen() == 0){
+    //     turn_left(20);
+    //     move_forward(percent,7);
+    //     turn_right(25);
+        
+    //     right_motor.SetPercent(100);
+    //     left_motor.SetPercent(-60);
+    //     Sleep(1000);
+    //     left_motor.Stop();
+    //     right_motor.Stop();
+    //     Sleep(2000);
+    // }
+
+}
+//raises arm to pick up apple then carries it to the table, pit stops to open window on the way to the ramp
+void pickupAndCarryShitBucket(float percent){
+    //lift apple
+    moveArmUp(1200);
+
+    //open the window
+    RamWindow(percent);
+
+    //drive to wall by ramp
+    move_forward(percent,2);
+    turn_left(60);
+    move_forward(percent,16);
+    turn_right(60);
+    move_backward(percent,30);
+    turn_right(10);
+    move_backward(percent,3);
+
+    //drive up ramp to right before the table
+    move_forward(percent,2);
+    turn_right(83);
+    move_forward(percent, 39);
+
+    //calibrate
+    move_backward(percent, 2);
+    turn_left(90);
+    move_backward(percent, 11);
+    turn_right(5);
+    move_backward(percent, 1);
+    move_forward(percent, 2);
+    turn_right(90);
+
+    //drive into table
+    move_forward(30, 4);
+
+    //back slightly away before setting down apple
+    move_backward(percent, 0.5);
+    //lower arm and back up
+    moveArmDown(500);
+    Sleep(500);
+    move_backward(percent, 2);
+    Sleep(300);
+
+    //push it closer to the table
+    move_forward(percent, 2);
+    move_backward(percent, 2);
+}
+//backs off of tabel and centers inbetween all levers
+void driveToLever(float percent){
+    //back up from table and center between the three levers
+    move_backward(percent, 2);
+    turn_left(80);
+    move_backward(percent,5);
+    move_forward(percent, 5.5);
+    turn_right(42);
+}
+//picks lever, preforms proper one, then drives backwards to line up with light
+void pullIt(float percent){
+    //get the needed lever
+    int lever = RCS.GetLever();
+    int j = 3;
+
+    lever = 1;
+    switch(lever)
+    {
+        case(0): // left (A)
+        // //drive to
+        // LCD.WriteLine("Lever: A");
+        // turn_left(45);
+        // move_forward(percent,5.5);
+        // turn_right(45);
+        // move_forward(percent,11);
+
+        // //perform
+        // moveArmDown(1000);
+        // move_backward(percent,2);
+        // moveArmDown(100);
+        // Sleep(4000);//wait 4 seconds to get bonus
+        // move_forward(percent, 2);
+        // moveArmUp(1000);
+
+        // //back away from lever
+        // move_backward(percent, 6.5);
+        // turn_left(45);
+        // move_backward(percent, 2);
+        // moveArmUp(1000);//dont need arm anymore
+        break;
+
+        case(1): // middle (B)
+        LCD.WriteLine("Lever: B");
+
+        //reset arm
+        moveArmUp(4000);
+        moveArmDown(2620);
+       
+        move_forward(percent,16.75);
+
+        //perform
+        moveArmDown(500);
+        Sleep(1000);
+
+        
+        //check if we actually hit the lever
+        while((RCS.isLeverFlipped() != 0) && (j <= 25)){
+
+            if(RCS.isLeverFlipped() != 1){
+                moveArmUp(500);
+                turn_right(j);
+                moveArmDown(500);
+                Sleep(1000);
+                //trun a bit more each time
+                j += 3;
+                
+            }
+
+            //if still not hit
+            if(RCS.isLeverFlipped() != 1){
+                moveArmUp(500);
+                turn_left(j);
+                moveArmDown(500);
+                Sleep(1000);
+                //trun a bit more each time
+                j += 3;
+            }
+        }
+
+        move_backward(percent,2);
+        moveArmDown(300);
+        Sleep(5000);//wait 5 seconds to get bonus
+        
+        move_forward(percent, 2);
+        moveArmUp(600);
+
+        j=0;
+        //check if the lever went back up
+        while((RCS.isLeverFlipped() != 0) && (j <= 25)){
+
+            if(RCS.isLeverFlipped() != 0){
+                moveArmDown(500);
+                turn_right(j);
+                moveArmUp(500);
+                Sleep(1000);
+                //trun a bit more each time
+                j += 3;
+                
+            }
+
+            //if still not hit
+            if(RCS.isLeverFlipped() != 0){
+                moveArmDown(500);
+                turn_left(j);
+                moveArmUp(500);
+                Sleep(1000);
+                //trun a bit more each time
+                j += 3;
+            }
+        }
+
+        //back away from lever
+        move_backward(percent, 10.25);
+        turn_left(42);
+        moveArmUp(1300);//dont need arm anymore
+        break;
+
+        case(2): // right (C)
+        // LCD.WriteLine("Lever: C");
+        // move_forward(percent, 5);
+        // turn_right(45);
+        // move_forward(percent, 6);
+        // turn_left(50);
+        // move_forward(percent, 6.5);
+
+        // //perform
+        // moveArmDown(1000);
+        // move_backward(percent,2);
+        // moveArmDown(300);
+        // Sleep(4000);//wait 4 seconds to get bonus
+        // move_forward(percent, 2);
+        // moveArmUp(2000);
+
+        // //back away from lever
+        // move_backward(percent, 5);
+        // turn_right(45);
+        // move_backward(percent, 3);
+        // turn_left(45);
+        // move_backward(percent, 6.5);
+        // turn_left(45);
+
+        break;
+
+        default:
+        LCD.WriteLine("shi don't work boy");
+    }
+
+    //get rid of arm not needed
+    moveArmUp(3000);
+}
+//drives forward untill it sees the light
+void hitButton(float percent){
+
+    bool cont=true;
+    LCD.WriteLine("hitting button now");
+    left_motor.SetPercent(percent);
+    right_motor.SetPercent(-percent);
+
+    // none: 3.25+   red: 2.72    blue: 3.082
+
+    double start = TimeNow();
+
+    //drive until over light or untill 10 seconds has passed
+    while(cds.Value() > 3.2 && (TimeNow()-start)<10);
+    if((TimeNow()-start)>10)
+    {
+        move_backward(percent, 6);
+        YourAlmostToTheBorder(percent);
+    }
+    LCD.WriteLine("senced the light");
+    left_motor.Stop();
+    right_motor.Stop();
+    Sleep(300);
+
+    //look at lights
+    turn_right(10);
+
+    //red button
+    if (cds.Value() < 3){
+        LCD.WriteLine("red");
+        LCD.WriteLine(cds.Value());
+
+        turn_right(35);
+        move_forward(percent, 15);
+        move_backward(percent, 1);
+        turn_right(30);
+        move_backward(percent, 5);
+        turn_left(30);
+
+        // //move to button
+        // turn_right(85);
+        // move_forward(percent,1);
+        // turn_left(85);
+        // move_forward(percent,8);
+
+        // Sleep(300);
+        // turn_left(50);
+        // turn_right(50);
+
+        // //move back
+        // move_backward(percent,8);
+        // turn_right(85);
+        // move_forward(percent,1);
+        // turn_left(85);
+
+
+
+    } else if(cds.Value() > 3){ // blue button
+        LCD.WriteLine("blue");
+        LCD.WriteLine(cds.Value());
+
+        turn_left(30);
+        move_forward(percent, 15);
+        move_backward(percent,1);
+        turn_left(30);
+        move_backward(percent, 5);
+        turn_right(30);
+
+
+        // //move to button
+        // turn_left(85);
+        // move_forward(percent,1);
+        // turn_right(85);
+        // move_forward(percent,8);
+
+        // Sleep(300);
+
+        // turn_right(50);
+        // turn_left(50);
+
+        // //move back
+        // move_backward(percent,8);
+        // turn_left(85);
+        // move_forward(percent,1);
+        // turn_right(85);
+
+    } else{
+        LCD.WriteLine("stop this im crying");
+    }
+
+}
+//end the run
+void YourAlmostToTheBorder(float percent){
+    LCD.WriteLine("IT'S PARTY TIME!!!!!!!!!");
+    move_backward(percent,30);
+    move_forward(percent,2);
+    turn_left(85);
+    move_forward(60,50);
+}
