@@ -29,24 +29,25 @@ void move_backward(float percent, float distance);
 void moveArmUp(int time);
 void moveArmDown(int time);
 
-//prototypes for tasks
-void driveToCompost(float percent);
-void spinThatCompost();
-void driveToShitBucket(float percent);
-void RamWindow(float percent);
-void pickupAndCarryShitBucket(float percent);
-void driveToLever(float percent);
-void pullIt(float Percent);
-void hitButton(float percent);
-void YourAlmostToTheBorder(float percent);
+
+//life of jose ---------------------------------------------
+void callHerUp(float);
+void twistThatHoe();
+void driveToShitBucket(float);
+void fuckTheWindow(float);
+void pickupAndCarryShitBucket(float);
+void driveToDickStick(float);
+void pullIt(float);
+void hityourwife(float);
+void YourAlmostToTheBorder(float);
 
 
 
 int main(void)
 {
-    float travelPercent=35;
+    float travelPercent=40;
 
-    //connect to course
+    // connect to course
     RCS.InitializeTouchMenu("0910B2EGL");
     // Wait for light to start
     LCD.WriteLine(cds.Value());
@@ -64,14 +65,20 @@ int main(void)
     left_encoder.ResetCounts();
     right_encoder.ResetCounts();
 
+    
     //start the run
-    driveToCompost(travelPercent);
-    spinThatCompost();
+    callHerUp(travelPercent);
+    twistThatHoe();
+    travelPercent=35;
     driveToShitBucket(travelPercent);
+    travelPercent = 55;
     pickupAndCarryShitBucket(travelPercent);
-    driveToLever(travelPercent);
+    travelPercent = 40;
+    driveToDickStick(travelPercent);
+    travelPercent=55;
     pullIt(travelPercent);
-    hitButton(travelPercent);
+    travelPercent = 75;
+    hityourwife(travelPercent);
     YourAlmostToTheBorder(travelPercent);
 }
 
@@ -136,6 +143,7 @@ void moveArmUp(int time)
 {
     //set a proper percent speed to move
     float percent = 40;
+
     // Move arm
     arm_motor.SetPercent(percent);
     //wait for desired time before stoping
@@ -147,6 +155,7 @@ void moveArmDown(int time)
 {
     //set a proper percent speed to move
     float percent = 40;
+
     // Move arm
     arm_motor.SetPercent(-percent);
     //wait for desired time before stoping
@@ -245,17 +254,24 @@ void move_backward(float percent, float distance){
     Sleep(20);
 }
 
-
 //functions for completing the course
-void driveToCompost(float percent){
+void driveToCompostNEW(float percent){
     move_forward(percent, 8);
-    turn_left(47.5);
-    move_forward(percent, 14.1);
+    turn_left(45);
+    move_forward(percent, 13.2);
+    turn_left(89);
+    move_forward(percent,2);
+}
+//functions for completing the course
+void callHerUp(float percent){
+    move_forward(percent, 8);
+    turn_left(45);
+    move_forward(percent, 14);
     turn_left(89);
     move_forward(percent,1.5);
 }
 //spins compost bin
-void spinThatCompost(){
+void twistThatHoe(){
     float armPercent = 40;
     float motorPercent = 40;
     //turn arm to spin the compost all the way
@@ -275,63 +291,42 @@ void driveToShitBucket(float percent){
     turn_left(45);
 
     //reset the arm and poerly inset it
-    moveArmUp(4000);
-    Sleep(100);
-    moveArmDown(2730);//exact time to pick up apple originally 2955, changed to 2965, now to 2945
+    moveArmUp(3000);
+    Sleep(200);
+    moveArmDown(2830);//exact time to pick up apple originally 2955, changed to 2965, now to 2945
 
     move_backward(percent, 4);
     turn_right(86);
-    move_forward(percent, 3.1);
-    move_backward(percent,.6);
+    move_forward(percent, 2.5);
+    move_backward(percent,.3);
 
 }
 //drive to and open the window
-void RamWindow(float percent){
+void fuckWindow(float percent){
     //back into window wall
     move_backward(percent,2);
-    turn_left(85);
+    turn_left(82);
     move_backward(percent,11);
     Sleep(100);
-    move_forward(percent,1.4);
-    turn_right(87);
-    move_backward(percent,2);
+    move_forward(percent,1.2);
+    turn_right(90);
+    move_backward(percent,2.5);
     Sleep(500);
 
     //keep a clock going to stop after a while, give up after ten seconds
     int Start = TimeNow();
     //keep going unitll window is fully open TEST CODE DELTER LATER MAYBE
     while(RCS.isWindowOpen() != 1 && (TimeNow() - Start) < 7){
-        right_motor.SetPercent(100);
-        left_motor.SetPercent(-50);
+        right_motor.SetPercent(90);
+        left_motor.SetPercent(-40);
         Sleep(300);
         left_motor.Stop();
         right_motor.Stop();
-        LCD.WriteLine("please");
-
+        Sleep(100);
+        move_forward(percent, .5);
+        Sleep(100);
     }
-
-    // //ram window
-    // right_motor.SetPercent(100);
-    // left_motor.SetPercent(-50);
-    // Sleep(2000);
-    // left_motor.Stop();
-    // right_motor.Stop();
-    // Sleep(2000);
-    
-    // // check if close, if not keep it in the loop and open it
-    // if (RCS.isWindowOpen() == 0){
-    //     turn_left(20);
-    //     move_forward(percent,7);
-    //     turn_right(25);
-        
-    //     right_motor.SetPercent(100);
-    //     left_motor.SetPercent(-60);
-    //     Sleep(1000);
-    //     left_motor.Stop();
-    //     right_motor.Stop();
-    //     Sleep(2000);
-    // }
-
+    turn_left(15);
 }
 //raises arm to pick up apple then carries it to the table, pit stops to open window on the way to the ramp
 void pickupAndCarryShitBucket(float percent){
@@ -339,29 +334,30 @@ void pickupAndCarryShitBucket(float percent){
     moveArmUp(1200);
 
     //open the window
-    RamWindow(percent);
+    fuckTheWindow(percent);
 
     //drive to wall by ramp
     move_forward(percent,2);
-    turn_left(60);
-    move_forward(percent,16);
-    turn_right(60);
-    move_backward(percent,30);
-    turn_right(10);
+    turn_left(85);
+    move_forward(percent,12);
+    turn_right(90);
+    move_backward(percent,24);
+    turn_right(15);
     move_backward(percent,3);
 
     //drive up ramp to right before the table
     move_forward(percent,2);
-    turn_right(83);
+    turn_right(85);
     move_forward(percent, 39);
 
     //calibrate
-    move_backward(percent, 2);
+    move_backward(percent, 3);
     turn_left(90);
-    move_backward(percent, 11);
-    turn_right(5);
-    move_backward(percent, 1);
-    move_forward(percent, 2);
+    move_backward(35, 11);
+    turn_right(12);
+    Sleep(100);
+    move_backward(35, 1);
+    move_forward(35, 1.5);
     turn_right(90);
 
     //drive into table
@@ -371,20 +367,22 @@ void pickupAndCarryShitBucket(float percent){
     move_backward(percent, 0.5);
     //lower arm and back up
     moveArmDown(500);
-    Sleep(500);
-    move_backward(percent, 2);
     Sleep(300);
+    move_backward(35, 2);
+    Sleep(100);
 
     //push it closer to the table
     move_forward(percent, 2);
-    move_backward(percent, 2);
+    move_backward(35, 2);
 }
 //backs off of tabel and centers inbetween all levers
-void driveToLever(float percent){
+void driveToDickStick(float percent){
     //back up from table and center between the three levers
     move_backward(percent, 2);
     turn_left(80);
     move_backward(percent,5);
+    turn_right(10);
+    move_backward(percent,1);
     move_forward(percent, 5.5);
     turn_right(42);
 }
@@ -392,7 +390,12 @@ void driveToLever(float percent){
 void pullIt(float percent){
     //get the needed lever
     int lever = RCS.GetLever();
-    int j = 3;
+    int j = 5;
+    bool left = true;
+
+    //reset arm
+    moveArmUp(4000);
+    moveArmDown(2850); //2620
 
     lever = 1;
     switch(lever)
@@ -422,71 +425,68 @@ void pullIt(float percent){
 
         case(1): // middle (B)
         LCD.WriteLine("Lever: B");
-
-        //reset arm
-        moveArmUp(4000);
-        moveArmDown(2620);
        
-        move_forward(percent,16.75);
+        move_forward(percent,16.25);
 
         //perform
-        moveArmDown(500);
-        Sleep(1000);
+        moveArmDown(600);
+        Sleep(1500);
 
         
         //check if we actually hit the lever
-        while((RCS.isLeverFlipped() != 0) && (j <= 25)){
+        while((RCS.isLeverFlipped() != 1) && (j <= 15)){
 
             if(RCS.isLeverFlipped() != 1){
-                moveArmUp(500);
+                moveArmUp(600);
                 turn_right(j);
-                moveArmDown(500);
-                Sleep(1000);
+                moveArmDown(600);
+                Sleep(1200);
                 //trun a bit more each time
-                j += 3;
+                j += 5;
                 
             }
 
             //if still not hit
             if(RCS.isLeverFlipped() != 1){
-                moveArmUp(500);
+                moveArmUp(600);
                 turn_left(j);
-                moveArmDown(500);
-                Sleep(1000);
+                moveArmDown(600);
+                Sleep(1200);
                 //trun a bit more each time
-                j += 3;
+                j += 5;
             }
         }
 
         move_backward(percent,2);
-        moveArmDown(300);
-        Sleep(5000);//wait 5 seconds to get bonus
+        moveArmDown(500);
+        Sleep(4000);//wait 5 seconds to get bonus
         
-        move_forward(percent, 2);
+        move_forward(percent, 1.2);
         moveArmUp(600);
+        Sleep(1000);
 
-        j=0;
+        j=5;
         //check if the lever went back up
-        while((RCS.isLeverFlipped() != 0) && (j <= 25)){
+        while((RCS.isLeverFlipped() != 0) && (j <= 15)){
 
             if(RCS.isLeverFlipped() != 0){
-                moveArmDown(500);
+                moveArmDown(600);
                 turn_right(j);
-                moveArmUp(500);
+                moveArmUp(600);
                 Sleep(1000);
                 //trun a bit more each time
-                j += 3;
+                j += 5;
                 
             }
 
             //if still not hit
             if(RCS.isLeverFlipped() != 0){
-                moveArmDown(500);
+                moveArmDown(600);
                 turn_left(j);
-                moveArmUp(500);
+                moveArmUp(600);
                 Sleep(1000);
                 //trun a bit more each time
-                j += 3;
+                j += 5;
             }
         }
 
@@ -527,10 +527,10 @@ void pullIt(float percent){
     }
 
     //get rid of arm not needed
-    moveArmUp(3000);
+    moveArmUp(2000);
 }
 //drives forward untill it sees the light
-void hitButton(float percent){
+void hityourwife(float percent){
 
     bool cont=true;
     LCD.WriteLine("hitting button now");
@@ -542,12 +542,17 @@ void hitButton(float percent){
     double start = TimeNow();
 
     //drive until over light or untill 10 seconds has passed
-    while(cds.Value() > 3.2 && (TimeNow()-start)<10);
-    if((TimeNow()-start)>10)
-    {
-        move_backward(percent, 6);
-        YourAlmostToTheBorder(percent);
+    while(/*cds.Value() > 3.2 && */(TimeNow()-start)<4);
+    if((TimeNow()-start)>4)
+    {   
+        //run back fast
+        move_backward(75, 6);
+        YourAlmostToTheBorder(75);
     }
+
+
+
+
     LCD.WriteLine("senced the light");
     left_motor.Stop();
     right_motor.Stop();
@@ -592,10 +597,11 @@ void hitButton(float percent){
 
         turn_left(30);
         move_forward(percent, 15);
-        move_backward(percent,1);
-        turn_left(30);
-        move_backward(percent, 5);
-        turn_right(30);
+        turn_right(15);
+        move_backward(percent,6);
+        // turn_left(30);
+        // move_backward(percent, 5);
+        // turn_right(30);
 
 
         // //move to button
@@ -623,8 +629,8 @@ void hitButton(float percent){
 //end the run
 void YourAlmostToTheBorder(float percent){
     LCD.WriteLine("IT'S PARTY TIME!!!!!!!!!");
-    move_backward(percent,30);
+    move_backward(percent,27);
     move_forward(percent,2);
     turn_left(85);
-    move_forward(60,50);
+    move_forward(percent,50);
 }
